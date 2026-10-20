@@ -46,6 +46,7 @@ jobs:
             flag: --mac --x64
             os: darwin
             cpu: x64
+            install_cpu: "*"
           - target: x86_64-pc-windows-msvc
             host: windows-latest
             flag: --win
@@ -101,7 +102,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: app
-        run: bun install --frozen-lockfile --os=${{ matrix.os }} --cpu=${{ matrix.cpu }}
+        run: bun install --frozen-lockfile --os=${{ matrix.os }} --cpu="${{ matrix.install_cpu || matrix.cpu }}"
 
       - name: Install rpm tooling
         if: runner.os == 'Linux'
