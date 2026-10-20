@@ -8,8 +8,7 @@ import { $ } from "bun"
 const builder = path.resolve(import.meta.dir, "..")
 const version = process.env.LOOPHOLE_VERSION ?? ""
 const tag = process.env.TAG ?? `v${version}`
-const repo = process.env.RELEASE_REPO ?? "loophole-ai/loophole-app"
-const ref = process.env.APP_REF ?? "loophole"
+const repo = process.env.RELEASE_REPO ?? "loophole-ai/desktop"
 const dist = process.env.DESKTOP_DIST ?? path.join(builder, "desktop-assets")
 
 if (!version) throw new Error("LOOPHOLE_VERSION is required")
@@ -57,9 +56,9 @@ if (view.exitCode === 0) {
   const upload = await $`gh release upload ${tag} ${paths} --clobber --repo ${repo}`.nothrow()
   if (upload.exitCode !== 0) throw new Error(`Failed to upload desktop assets\n${upload.stderr.toString()}`)
 } else {
-  console.log(`creating release ${tag} on ${repo}@${ref}`)
+  console.log(`creating release ${tag} on ${repo}`)
   const create =
-    await $`gh release create ${tag} ${paths} --repo ${repo} --target ${ref} --title ${`Loophole Desktop ${tag}`} --notes-file ${notes}`.nothrow()
+    await $`gh release create ${tag} ${paths} --repo ${repo} --title ${`Loophole Desktop ${tag}`} --notes-file ${notes}`.nothrow()
   if (create.exitCode !== 0) throw new Error(`Failed to create release\n${create.stderr.toString()}`)
 }
 

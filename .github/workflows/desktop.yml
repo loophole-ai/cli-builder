@@ -148,7 +148,7 @@ jobs:
       LOOPHOLE_VERSION: ${{ inputs.version }}
       CLI_VERSION: ${{ inputs.cli_version }}
       TAG: v${{ inputs.version }}
-      APP_REF: ${{ inputs.ref || 'loophole' }}
+      RELEASE_REPO: loophole-ai/desktop
       GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
       RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
       DESKTOP_DIST: ${{ github.workspace }}/builder/desktop-assets

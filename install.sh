@@ -23,8 +23,8 @@ Options:
         --no-modify-path    Don't modify shell config files (.zshrc, .bashrc, etc.)
 
 Examples:
-    curl -fsSL https://github.com/loophole-ai/loophole-app/releases/latest/download/install.sh | bash
-    curl -fsSL https://raw.githubusercontent.com/loophole-ai/cli-builder/main/install.sh | bash
+    curl -fsSL https://github.com/loophole-ai/cli/releases/latest/download/install.sh | bash
+    curl -fsSL https://raw.githubusercontent.com/loophole-ai/forge/main/install.sh | bash
     curl -fsSL .../install.sh | bash -s -- --version 1.0.5
     ./install.sh --binary /path/to/loophole
 EOF

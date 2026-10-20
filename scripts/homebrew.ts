@@ -8,7 +8,8 @@ import { $ } from "bun"
 const builder = path.resolve(import.meta.dir, "..")
 const version = process.env.LOOPHOLE_VERSION ?? ""
 const tag = process.env.TAG ?? `v${version}`
-const appRepo = process.env.RELEASE_REPO ?? "loophole-ai/loophole-app"
+const sourceRepo = process.env.SOURCE_REPO ?? "loophole-ai/loophole-app"
+const downloadRepo = process.env.RELEASE_REPO ?? "loophole-ai/cli"
 const tapRepo = process.env.HOMEBREW_TAP ?? "loophole-ai/homebrew-tap"
 const token = process.env.HOMEBREW_TAP_TOKEN ?? process.env.RELEASE_TOKEN
 const assets = process.env.ASSETS_DIR ?? path.join(builder, "assets")
@@ -36,7 +37,7 @@ const resolved = await Promise.all(
     if (await Bun.file(asset).exists()) {
       return {
         ...item,
-        url: `https://github.com/${appRepo}/releases/download/${tag}/${item.file}`,
+        url: `https://github.com/${downloadRepo}/releases/download/${tag}/${item.file}`,
         sha256: await sha256(await Bun.file(asset).arrayBuffer()),
       }
     }
@@ -62,7 +63,7 @@ const linuxIntel = byTarget("linux-x64-baseline")
 
 const formula = `class Loophole < Formula
   desc "Open-source AI coding agent for the terminal"
-  homepage "https://github.com/${appRepo}"
+  homepage "https://github.com/${sourceRepo}"
   version "${version}"
   license "AGPL-3.0-only"
 

@@ -44,6 +44,7 @@ jobs:
       ASSETS_DIR: ${{ github.workspace }}/builder/assets
       GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
       RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+      RELEASE_REPO: loophole-ai/cli
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       RAW_VERSION: ${{ inputs.version || github.ref_name }}
       APP_REF: ${{ inputs.ref || 'loophole' }}
@@ -115,7 +116,7 @@ jobs:
         run: bun run "$GITHUB_WORKSPACE/builder/scripts/homebrew.ts"
 
       - name: Upload build artifacts
-        if: always()
+        if: always() && hashFiles('builder/assets/*') != ''
         uses: actions/upload-artifact@v4
         with:
           name: loophole-cli-${{ env.LOOPHOLE_VERSION }}
