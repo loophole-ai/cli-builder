@@ -96,6 +96,7 @@ jobs:
       - name: Fetch bundled CLI from npm
         env:
           CLI_TARGET: ${{ matrix.target }}
+        shell: bash
         run: bun run "$GITHUB_WORKSPACE/builder/scripts/fetch-cli-dist.ts"
 
       - name: Install dependencies
