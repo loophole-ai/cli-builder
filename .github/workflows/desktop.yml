@@ -1,0 +1,169 @@
+name: desktop-builder
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Desktop version (e.g. 1.0.0)"
+        required: true
+        default: "1.0.0"
+      cli_version:
+        description: "Published CLI version to bundle"
+        required: true
+        default: "1.0.5"
+      ref:
+        description: "loophole-ai/loophole-app ref (branch, tag, or SHA)"
+        required: true
+        default: "loophole"
+      publish_release:
+        description: "Create the GitHub release with installers + updater manifests"
+        type: boolean
+        default: true
+
+concurrency:
+  group: desktop-builder-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: ${{ matrix.target }}
+    runs-on: ${{ matrix.host }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: aarch64-apple-darwin
+            host: macos-14
+            flag: --mac --arm64
+            os: darwin
+            cpu: arm64
+          - target: x86_64-apple-darwin
+            host: macos-14
+            flag: --mac --x64
+            os: darwin
+            cpu: x64
+          - target: x86_64-pc-windows-msvc
+            host: windows-latest
+            flag: --win
+            os: win32
+            cpu: x64
+          - target: x86_64-unknown-linux-gnu
+            host: ubuntu-latest
+            flag: --linux
+            os: linux
+            cpu: x64
+          - target: aarch64-unknown-linux-gnu
+            host: ubuntu-24.04-arm
+            flag: --linux --arm64
+            os: linux
+            cpu: arm64
+    env:
+      LOOPHOLE_VERSION: ${{ inputs.version }}
+      CLI_VERSION: ${{ inputs.cli_version }}
+      OPENCODE_CHANNEL: prod
+      OPENCODE_CLI_TARGET: ${{ matrix.target }}
+      OPENCODE_CLI_DIST: ${{ github.workspace }}/app/packages/cli/dist
+      APP_DIR: ${{ github.workspace }}/app
+      GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+    steps:
+      - name: Checkout builder
+        uses: actions/checkout@v4
+        with:
+          path: builder
+
+      - name: Checkout loophole-app
+        uses: actions/checkout@v4
+        with:
+          repository: loophole-ai/loophole-app
+          ref: ${{ inputs.ref || 'loophole' }}
+          path: app
+          fetch-depth: 1
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Fetch bundled CLI from npm
+        env:
+          CLI_TARGET: ${{ matrix.target }}
+        run: bun run "$GITHUB_WORKSPACE/builder/scripts/fetch-cli-dist.ts"
+
+      - name: Install dependencies
+        working-directory: app
+        run: bun install --frozen-lockfile --os=${{ matrix.os }} --cpu=${{ matrix.cpu }}
+
+      - name: Install rpm tooling
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends rpm
+
+      - name: Prepare
+        working-directory: app/packages/desktop
+        run: bun ./scripts/prepare.ts
+
+      - name: Build
+        working-directory: app/packages/desktop
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+        run: bun run build
+
+      - name: Package
+        working-directory: app/packages/desktop
+        timeout-minutes: 60
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: npx electron-builder ${{ matrix.flag }} --publish never --config electron-builder.config.ts
+
+      - name: Upload installers
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-${{ matrix.target }}
+          if-no-files-found: error
+          path: |
+            app/packages/desktop/dist/*.dmg
+            app/packages/desktop/dist/*.zip
+            app/packages/desktop/dist/*.exe
+            app/packages/desktop/dist/*.blockmap
+            app/packages/desktop/dist/*.AppImage
+            app/packages/desktop/dist/*.deb
+            app/packages/desktop/dist/*.rpm
+            app/packages/desktop/dist/latest*.yml
+
+  release:
+    name: publish ${{ inputs.version }}
+    needs: package
+    if: inputs.publish_release
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      LOOPHOLE_VERSION: ${{ inputs.version }}
+      CLI_VERSION: ${{ inputs.cli_version }}
+      TAG: v${{ inputs.version }}
+      APP_REF: ${{ inputs.ref || 'loophole' }}
+      GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+      RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+      DESKTOP_DIST: ${{ github.workspace }}/builder/desktop-assets
+    steps:
+      - name: Checkout builder
+        uses: actions/checkout@v4
+        with:
+          path: builder
+
+      - name: Download installers
+        uses: actions/download-artifact@v4
+        with:
+          pattern: desktop-*
+          path: builder/desktop-assets
+          merge-multiple: true
+
+      - name: Create GitHub release
+        run: bun run "$GITHUB_WORKSPACE/builder/scripts/desktop-release.ts"
