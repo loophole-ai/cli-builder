@@ -1,0 +1,124 @@
+name: cli-builder
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "CLI version to build and publish (e.g. 1.0.5)"
+        required: true
+        default: "1.0.5"
+      ref:
+        description: "loophole-ai/loophole-app ref (branch, tag, or SHA)"
+        required: true
+        default: "loophole"
+      publish_npm:
+        description: "Publish @loophole-ai/cli + 12 platform packages to npm"
+        type: boolean
+        default: true
+      publish_release:
+        description: "Create/update the GitHub release with the CLI binaries"
+        type: boolean
+        default: true
+      publish_homebrew:
+        description: "Update the Homebrew tap formula"
+        type: boolean
+        default: false
+  push:
+    tags:
+      - "v*"
+
+concurrency:
+  group: cli-builder-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: build + publish ${{ inputs.version || github.ref_name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      APP_DIR: ${{ github.workspace }}/app
+      ASSETS_DIR: ${{ github.workspace }}/builder/assets
+      GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+      RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      RAW_VERSION: ${{ inputs.version || github.ref_name }}
+      APP_REF: ${{ inputs.ref || 'loophole' }}
+      PUBLISH_NPM: ${{ github.event_name == 'push' || inputs.publish_npm }}
+      PUBLISH_RELEASE: ${{ github.event_name == 'push' || inputs.publish_release }}
+      PUBLISH_HOMEBREW: ${{ github.event_name != 'push' && inputs.publish_homebrew }}
+    steps:
+      - name: Checkout builder
+        uses: actions/checkout@v4
+        with:
+          path: builder
+
+      - name: Checkout loophole-app
+        uses: actions/checkout@v4
+        with:
+          repository: loophole-ai/loophole-app
+          ref: ${{ inputs.ref || 'loophole' }}
+          path: app
+          fetch-depth: 1
+
+      - name: Prepare version
+        run: |
+          set -euo pipefail
+          version="${RAW_VERSION#v}"
+          if ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$'; then
+            echo "::error::Invalid version: $version"
+            exit 1
+          fi
+          echo "LOOPHOLE_VERSION=$version" >> "$GITHUB_ENV"
+          echo "TAG=v$version" >> "$GITHUB_ENV"
+          echo "Building Loophole CLI $version from loophole-ai/loophole-app@$APP_REF"
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+
+      - name: Install dependencies
+        working-directory: app
+        run: bun install --frozen-lockfile
+
+      - name: Build all CLI targets
+        working-directory: app/packages/cli
+        env:
+          OPENCODE_CHANNEL: latest
+        run: bun run script/build.ts
+
+      - name: Publish to npm
+        if: env.PUBLISH_NPM == 'true'
+        run: |
+          set -euo pipefail
+          if [ -z "${NPM_TOKEN:-}" ]; then
+            echo "::error::NPM_TOKEN secret is not set"
+            exit 1
+          fi
+          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > "$HOME/.npmrc"
+          bun run "$GITHUB_WORKSPACE/builder/scripts/publish-cli.ts"
+
+      - name: Package release assets
+        if: env.PUBLISH_RELEASE == 'true'
+        run: bun run "$GITHUB_WORKSPACE/builder/scripts/archive.ts"
+
+      - name: Create GitHub release
+        if: env.PUBLISH_RELEASE == 'true'
+        run: bun run "$GITHUB_WORKSPACE/builder/scripts/release.ts"
+
+      - name: Update Homebrew tap
+        if: env.PUBLISH_HOMEBREW == 'true'
+        run: bun run "$GITHUB_WORKSPACE/builder/scripts/homebrew.ts"
+
+      - name: Upload build artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: loophole-cli-${{ env.LOOPHOLE_VERSION }}
+          path: builder/assets/*
+          if-no-files-found: warn
+          retention-days: 14
