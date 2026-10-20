@@ -9,7 +9,7 @@ import { $ } from "bun"
 
 const version = process.env.CLI_VERSION ?? process.env.LOOPHOLE_VERSION ?? ""
 const target = process.env.CLI_TARGET ?? ""
-const out = process.env.CLI_DIST ?? path.join(process.cwd(), "cli-dist")
+const out = process.env.OPENCODE_CLI_DIST ?? process.env.CLI_DIST ?? path.join(process.cwd(), "cli-dist")
 
 const targets: Record<string, { package: string; os: string; cpu: string }> = {
   "aarch64-apple-darwin": { package: "@loophole-ai/cli-darwin-arm64", os: "darwin", cpu: "arm64" },
@@ -30,6 +30,8 @@ try {
   const dest = path.join(out, entry.package.replace("@loophole-ai/", ""))
   await rm(dest, { recursive: true, force: true })
   await cp(source, dest, { recursive: true })
+  const binary = path.join(dest, "bin", entry.os === "win32" ? "loophole.exe" : "loophole")
+  if (!(await Bun.file(binary).exists())) throw new Error(`CLI binary missing after copy: ${binary}`)
   console.log(`prepared ${entry.package}@${version} -> ${dest}`)
 } finally {
   await rm(directory, { recursive: true, force: true })

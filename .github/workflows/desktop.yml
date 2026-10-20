@@ -71,12 +71,12 @@ jobs:
       GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
     steps:
       - name: Checkout builder
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           path: builder
 
       - name: Checkout loophole-app
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: loophole-ai/loophole-app
           ref: ${{ inputs.ref || 'loophole' }}
@@ -89,7 +89,7 @@ jobs:
           bun-version: 1.4.2
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: "24"
 
@@ -155,7 +155,7 @@ jobs:
       DESKTOP_DIST: ${{ github.workspace }}/builder/desktop-assets
     steps:
       - name: Checkout builder
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           path: builder
 
