@@ -174,3 +174,10 @@ jobs:
 
       - name: Create GitHub release
         run: bun run "$GITHUB_WORKSPACE/builder/scripts/desktop-release.ts"
+
+      - name: Announce release on Discord
+        env:
+          RELEASE_KIND: Desktop
+          RELEASE_REPO: loophole-ai/desktop
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: bun run "$GITHUB_WORKSPACE/builder/scripts/discord-announce.ts"

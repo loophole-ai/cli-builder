@@ -111,6 +111,14 @@ jobs:
         if: env.PUBLISH_RELEASE == 'true'
         run: bun run "$GITHUB_WORKSPACE/builder/scripts/release.ts"
 
+      - name: Announce release on Discord
+        if: env.PUBLISH_RELEASE == 'true'
+        env:
+          RELEASE_KIND: CLI
+          RELEASE_REPO: loophole-ai/cli
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: bun run "$GITHUB_WORKSPACE/builder/scripts/discord-announce.ts"
+
       - name: Update Homebrew tap
         if: env.PUBLISH_HOMEBREW == 'true'
         run: bun run "$GITHUB_WORKSPACE/builder/scripts/homebrew.ts"
