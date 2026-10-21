@@ -11,6 +11,7 @@ const repo = process.env.RELEASE_REPO ?? ""
 const kind = process.env.RELEASE_KIND ?? "CLI"
 const webhook = process.env.DISCORD_WEBHOOK ?? ""
 const marker = "<!-- discord-announced -->"
+const force = process.env.ANNOUNCE_FORCE === "1" || process.argv.includes("--force")
 
 if (!version) throw new Error("LOOPHOLE_VERSION is required")
 if (!repo) throw new Error("RELEASE_REPO is required")
@@ -24,8 +25,8 @@ if (!webhook) {
 const view = await $`gh release view ${tag} --repo ${repo} --json body`.quiet().nothrow()
 if (view.exitCode !== 0) throw new Error(`Failed to read release ${tag}\n${view.stderr.toString()}`)
 const body = JSON.parse(view.stdout.toString()).body as string
-if (body.includes(marker)) {
-  console.log(`${tag} already announced; skipping`)
+if (body.includes(marker) && !force) {
+  console.log(`${tag} already announced; skipping (set ANNOUNCE_FORCE=1 to re-post)`)
   process.exit(0)
 }
 
@@ -46,7 +47,7 @@ const res = await fetch(webhook, {
         title: `${name} ${tag} is out`,
         url,
         description,
-        color: kind === "Desktop" ? 0x5865f2 : 0x2b2d31,
+        color: 0xffffff,
         footer: { text: `Released ${new Date().toISOString().slice(0, 10)} · ${repo}` },
       },
     ],
@@ -55,5 +56,6 @@ const res = await fetch(webhook, {
 if (!res.ok) throw new Error(`Discord webhook failed: ${res.status} ${await res.text()}`)
 
 const edit = await $`gh release edit ${tag} --repo ${repo} --notes ${`${body}\n\n${marker}`}`.nothrow()
-if (edit.exitCode !== 0) throw new Error(`Failed to mark ${tag} as announced\n${edit.stderr.toString()}`)
+if (edit.exitCode !== 0 && !body.includes(marker))
+  throw new Error(`Failed to mark ${tag} as announced\n${edit.stderr.toString()}`)
 console.log(`announced ${tag} to Discord`)

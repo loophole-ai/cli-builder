@@ -13,6 +13,10 @@ on:
       version:
         description: "Release version to announce (e.g. 1.0.7)"
         required: true
+      force:
+        description: "Re-post even if already announced"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -34,6 +38,7 @@ jobs:
       GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
       RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
       DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+      ANNOUNCE_FORCE: ${{ inputs.force && '1' || '0' }}
     steps:
       - name: Checkout builder
         uses: actions/checkout@v4
