@@ -1,0 +1,47 @@
+name: announce
+
+on:
+  workflow_dispatch:
+    inputs:
+      kind:
+        description: "Which product to announce"
+        type: choice
+        options:
+          - cli
+          - desktop
+        default: cli
+      version:
+        description: "Release version to announce (e.g. 1.0.7)"
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: announce-${{ inputs.kind }}-${{ inputs.version }}
+  cancel-in-progress: true
+
+jobs:
+  announce:
+    name: announce ${{ inputs.kind }} ${{ inputs.version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      LOOPHOLE_VERSION: ${{ inputs.version }}
+      RELEASE_KIND: ${{ inputs.kind == 'desktop' && 'Desktop' || 'CLI' }}
+      RELEASE_REPO: ${{ inputs.kind == 'desktop' && 'loophole-ai/desktop' || 'loophole-ai/cli' }}
+      TAG: v${{ inputs.version }}
+      GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+      RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+      DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+    steps:
+      - name: Checkout builder
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+
+      - name: Announce
+        run: bun run scripts/discord-announce.ts
