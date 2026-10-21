@@ -47,7 +47,7 @@ const res = await fetch(webhook, {
         title: `${name} ${tag} is out`,
         url,
         description,
-        color: 0xffffff,
+        color: 0xfefefe,
         footer: { text: `Released ${new Date().toISOString().slice(0, 10)} · ${repo}` },
       },
     ],
