@@ -10,7 +10,7 @@ on:
       cli_version:
         description: "Published CLI version to bundle"
         required: true
-        default: "1.0.5"
+        default: "1.0.8"
       ref:
         description: "loophole-ai/loophole-app ref (branch, tag, or SHA)"
         required: true

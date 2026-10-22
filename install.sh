@@ -18,14 +18,14 @@ Usage: install.sh [options]
 
 Options:
     -h, --help              Display this help message
-    -v, --version <version> Install a specific version (e.g. 1.0.5)
+    -v, --version <version> Install a specific version (e.g. 1.0.8)
     -b, --binary <path>     Install from a local binary instead of downloading
         --no-modify-path    Don't modify shell config files (.zshrc, .bashrc, etc.)
 
 Examples:
     curl -fsSL https://github.com/loophole-ai/cli/releases/latest/download/install.sh | bash
     curl -fsSL https://raw.githubusercontent.com/loophole-ai/forge/main/install.sh | bash
-    curl -fsSL .../install.sh | bash -s -- --version 1.0.5
+    curl -fsSL .../install.sh | bash -s -- --version 1.0.8
     ./install.sh --binary /path/to/loophole
 EOF
 }
