@@ -39,7 +39,7 @@ Tag pushes (`v1.0.8`) run the same pipeline with npm + release enabled.
 
 ## Desktop (`desktop-builder`)
 
-Inputs: `version` (e.g. `1.0.0`), `cli_version` (published CLI to bundle),
+Inputs: `version` (e.g. `1.0.3`), `cli_version` (published CLI to bundle),
 `ref`, `publish_release`.
 
 Matrix (native runners — installers cannot be cross-built):
@@ -114,7 +114,7 @@ APP_DIR=/path/to/loophole-app LOOPHOLE_VERSION=1.0.8 bun scripts/publish-cli.ts 
 LOOPHOLE_VERSION=1.0.8 ASSETS_DIR=/path/to/assets bun scripts/homebrew.ts --dry-run
 
 # Desktop release preview (lists the assets it would upload)
-LOOPHOLE_VERSION=1.0.0 DESKTOP_DIST=/path/to/assets GH_TOKEN=dummy \
+LOOPHOLE_VERSION=1.0.3 DESKTOP_DIST=/path/to/assets GH_TOKEN=dummy \
   bun scripts/desktop-release.ts --dry-run
 ```
 

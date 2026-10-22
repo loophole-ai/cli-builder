@@ -11,7 +11,7 @@ on:
           - desktop
         default: cli
       version:
-        description: "Release version to announce (e.g. 1.0.7)"
+        description: "Release version to announce (e.g. 1.0.8)"
         required: true
       force:
         description: "Re-post even if already announced"

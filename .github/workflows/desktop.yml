@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Desktop version (e.g. 1.0.0)"
+        description: "Desktop version (e.g. 1.0.3)"
         required: true
-        default: "1.0.0"
+        default: "1.0.3"
       cli_version:
         description: "Published CLI version to bundle"
         required: true
